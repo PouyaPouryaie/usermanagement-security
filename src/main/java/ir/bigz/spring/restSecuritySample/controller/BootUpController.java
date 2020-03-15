@@ -1,5 +1,6 @@
-package ir.bigz.spring.restSecuritySample.bootup;
+package ir.bigz.spring.restSecuritySample.controller;
 
+import ir.bigz.spring.restSecuritySample.bootup.BootUpService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
