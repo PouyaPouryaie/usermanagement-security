@@ -2,22 +2,25 @@ package ir.bigz.spring.restSecuritySample.jwt;
 
 import com.google.common.base.Strings;
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
+import ir.bigz.spring.restSecuritySample.security.SecurityUserService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.security.SignatureException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -26,13 +29,15 @@ import java.util.stream.Collectors;
 
 public class JwtTokenVerifier extends OncePerRequestFilter {
 
-    private final SecretKey secretKey;
     private final JwtConfig jwtConfig;
+    private final JwtTokenUtil jwtTokenUtil;
+    private final SecurityUserService securityUserService;
 
-    public JwtTokenVerifier(SecretKey secretKey,
-                            JwtConfig jwtConfig) {
-        this.secretKey = secretKey;
+    public JwtTokenVerifier(JwtConfig jwtConfig,
+                            JwtTokenUtil jwtTokenUtil, SecurityUserService securityUserService) {
         this.jwtConfig = jwtConfig;
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.securityUserService = securityUserService;
     }
 
 
@@ -41,65 +46,89 @@ public class JwtTokenVerifier extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        try {
+
+            String username = null;
+            String token = null;
+
+            String authorizationHeader = request.getHeader(jwtConfig.getAuthorizationHeader());
+
+            token = authorizationHeader.replace(jwtConfig.getTokenPrefix(), "");
+
+            if (StringUtils.hasText(token) && jwtTokenUtil.validateToken(token)) {
+                String usernameFromToken = jwtTokenUtil.getUsernameFromToken(token);
+
+                UserDetails userDetails = securityUserService.loadUserByUsername(usernameFromToken);
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        userDetails, null, userDetails.getAuthorities());
+                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (Exception ex) {
+            logger.error("Could not set user authentication in security context", ex);
+        }
+
+/*        String username = null;
+        String token = null;
+
         String authorizationHeader = request.getHeader(jwtConfig.getAuthorizationHeader());
 
         //check if authorizationHeader is null or
         // token dose not exists so reject request in this filter and dose not authenticated
-        if(Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(jwtConfig.getTokenPrefix())){
+        if (Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(jwtConfig.getTokenPrefix())) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String token = authorizationHeader.replace(jwtConfig.getTokenPrefix(), "");
+        token = authorizationHeader.replace(jwtConfig.getTokenPrefix(), "");
 
-        try{
+        try {
 
+            username = jwtTokenUtil.getUsernameFromToken(token);
 
-            Jws<Claims> claimsJws = Jwts.parserBuilder()
-                    .setSigningKey(secretKey)
-                    .build()
-                    .parseClaimsJws(token);
+            UserDetails userDetails = securityUserService.loadUserByUsername(username);
 
-            Claims body = claimsJws.getBody();
+            if(jwtTokenUtil.validateToken(token, userDetails)){
 
-            String username = body.getSubject();
+                Jws<Claims> claimsJws = jwtTokenUtil.parserToken(token);
 
-            var authorities = (List<Map<String, String>>) body.get("authorities");
+                Claims body = claimsJws.getBody();
 
-            Set<SimpleGrantedAuthority> simpleGrantedAuthorities = authorities.stream()
-                    .map(m -> new SimpleGrantedAuthority(m.get("authority")))
-                    .collect(Collectors.toSet());
+                //username = body.getSubject();
 
-            Authentication authentication = new UsernamePasswordAuthenticationToken(
-                    username,
-                    null,
-                    simpleGrantedAuthorities
-            );
+                var authorities = (List<Map<String, String>>) body.get("authorities");
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                Set<SimpleGrantedAuthority> simpleGrantedAuthorities = authorities.stream()
+                        .map(m -> new SimpleGrantedAuthority(m.get("authority")))
+                        .collect(Collectors.toSet());
 
-            //new
-            Date date = new Date();
-            long nowDateTime = date.getTime();
-            long exDateTime = body.getExpiration().getTime();
-            if(exDateTime - nowDateTime < 3600000){
-                Date expirationTime = new Date(exDateTime + 3600000);
+                Authentication authentication = new UsernamePasswordAuthenticationToken(
+                        username,
+                        null,
+                        simpleGrantedAuthorities
+                );
 
-                String refreshToken = Jwts.builder()
-                        .setSubject(username)
-                        .claim("authorities", authentication.getAuthorities())
-                        .setIssuedAt(new Date())
-                        .setExpiration(expirationTime)
-                        .signWith(secretKey)
-                        .compact();
+                SecurityContextHolder.getContext().setAuthentication(authentication);
 
-                response.addHeader(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix() + refreshToken);
+                //new
+                Date date = new Date();
+                long nowDateTime = date.getTime();
+                long exDateTime = body.getExpiration().getTime();
+                if (exDateTime - nowDateTime < 3600000) {
+                    Date expirationTime = new Date(exDateTime + 3600000);
 
+                    token = jwtTokenUtil.generateToken(authentication, username, expirationTime);
+
+                }
+                response.addHeader(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix() + token   );
             }
 
-        }catch (JwtException e){
-            throw new IllegalStateException(String.format("Token %s can not be trusted", token));
-        }
+        } catch (IllegalArgumentException e) {
+            logger.error("an error occured during getting username from token", e);
+        } catch (ExpiredJwtException e) {
+            logger.warn("the token is expired and not valid anymore", e);
+        }*/
 
         filterChain.doFilter(request, response);
     }

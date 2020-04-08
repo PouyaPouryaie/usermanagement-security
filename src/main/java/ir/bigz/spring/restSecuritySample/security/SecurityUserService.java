@@ -91,7 +91,8 @@ public class SecurityUserService implements UserDetailsService {
 
         SecurityUser securityUser = new SecurityUser(simpleGrantedAuthorities,
                 applicationUserFromDao.get().getUserName(),
-                passwordEncoder.encode(applicationUserFromDao.get().getPassword()),
+                //passwordEncoder.encode(applicationUserFromDao.get().getPassword()),
+                applicationUserFromDao.get().getPassword(),
                 true,
                 true,
                 true,

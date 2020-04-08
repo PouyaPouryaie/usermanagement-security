@@ -1,5 +1,8 @@
 package ir.bigz.spring.restSecuritySample.filter;
 
+import com.google.common.base.Strings;
+import ir.bigz.spring.restSecuritySample.jwt.JwtConfig;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.AccessDecisionManager;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
@@ -21,33 +24,67 @@ import java.util.stream.Collectors;
 @Component
 public class CustomAuthorizeFilter extends OncePerRequestFilter {
 
+    @Autowired
+    private JwtConfig jwtConfig;
+
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        List<String> endPointRequest = Arrays.asList(request.getRequestURI().split("/"));
+        String authorizationHeader = request.getHeader(jwtConfig.getAuthorizationHeader());
 
-        Map<String, String> endPointRequestMap = new HashMap<>();
-        for(String s: endPointRequest){
-            endPointRequestMap.put(s, s);
+        //check if authorizationHeader is null or
+        // token dose not exists so reject request in this filter and dose not authenticated
+        if (Strings.isNullOrEmpty(authorizationHeader) || !authorizationHeader.startsWith(jwtConfig.getTokenPrefix())) {
+            filterChain.doFilter(request, response);
+            return;
         }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+        List<String> endPointRequest = Arrays.asList(request.getRequestURI().split("/"));
 
-        boolean authorize = false;
-
-        authorize = authorities.stream()
-                .anyMatch(o -> endPointRequestMap.get(o.getAuthority()) != null);
-
-
-        if(authorize){
+        if(endPointRequest.size() == 0){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("token"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("oauth"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("login"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("oauth2"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("auth"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("webjars"))){
             filterChain.doFilter(request, response);
         }
         else{
-            throw new IllegalAccessError(String.format("use %s not access", authentication.getName()));
-        }
+            Map<String, String> endPointRequestMap = new HashMap<>();
+            for(String s: endPointRequest){
+                endPointRequestMap.put(s, s);
+            }
 
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
+
+            boolean authorize = false;
+
+            authorize = authorities.stream()
+                    .anyMatch(o -> endPointRequestMap.get(o.getAuthority()) != null);
+
+
+            if(authorize){
+                filterChain.doFilter(request, response);
+            }
+            else{
+                throw new IllegalAccessError(String.format("use %s not access", authentication.getName()));
+            }
+        }
     }
 }

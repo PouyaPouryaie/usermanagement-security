@@ -54,6 +54,7 @@ public class DataBaseSeeder {
             applicationUser.setActive(true);
             applicationUser.setPassword("password");
             applicationUser.setUserName("admin");
+            applicationUser.setEmail("admin@admin.com");
             applicationUserDao.insert(applicationUser);
             if(adminRoleFromDb.isPresent()){
                 Set<UserRole> userRoles = new HashSet<>();
@@ -67,11 +68,11 @@ public class DataBaseSeeder {
 
     public void initBasicRole(){
         Optional<UserRole> userRoleFindByRole = userRoleDao.getUserRole("Admin");
-        UserRole userRole = new UserRole();
+        UserRole adminRole = new UserRole();
 
         if(userRoleFindByRole.isPresent()){
-            userRole = userRoleFindByRole.get();
-            Set<UserPermission> userPermissionForRole = userRole.getUserPermissionsForRole();
+            adminRole = userRoleFindByRole.get();
+            Set<UserPermission> userPermissionForRole = adminRole.getUserPermissionsForRole();
             List<UserPermission> userPermissionFromUserPermissionTable = userPermissionDao.getAll();
 
 /*            Map<String, UserPermission> userPermissionFromDbMap = userPermissionForRole.stream()
@@ -92,19 +93,30 @@ public class DataBaseSeeder {
             if(userPermissionSets.size() > 0){
                 userPermissionForRole.addAll(userPermissionSets);
 
-                userRole.setUserPermissionsForRole(userPermissionForRole);
+                adminRole.setUserPermissionsForRole(userPermissionForRole);
 
-                userRoleDao.update(userRole);
+                userRoleDao.update(adminRole);
             }
 
         }else{
-            userRole.setRoleName("ROLE_Admin");
-            userRole.setRoleDescription("role with all privilege");
-            userRoleDao.insert(userRole);
+            adminRole.setRoleName("ROLE_Admin");
+            adminRole.setRoleDescription("role with all privilege");
+            userRoleDao.insert(adminRole);
             List<UserPermission> userPermissionFromUserPermissionTable = userPermissionDao.getAll();
-            userRole.setUserPermissionsForRole(new HashSet<>(userPermissionFromUserPermissionTable));
-            userRoleDao.update(userRole);
+            adminRole.setUserPermissionsForRole(new HashSet<>(userPermissionFromUserPermissionTable));
+            userRoleDao.update(adminRole);
         }
+
+/*        UserRole userRole = new UserRole();
+        userRole.setRoleName("ROLE_USER");
+        userRole.setRoleDescription("role for normal user");
+        userRoleDao.insert(userRole);
+        List<UserPermission> userPermissionFromUserPermissionTable = userPermissionDao.getAll();
+        Set<UserPermission> getAllSample = userPermissionFromUserPermissionTable.stream()
+                .filter(userPermission -> userPermission.getPermissionName().equals("getAllSample"))
+                .collect(Collectors.toSet());
+        userRole.setUserPermissionsForRole(new HashSet<>(getAllSample));
+        userRoleDao.update(userRole);*/
     }
 
     public void initBasicPermission(){
