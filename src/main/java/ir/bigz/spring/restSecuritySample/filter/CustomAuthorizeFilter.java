@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.security.Principal;
 import java.util.*;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 @Component
@@ -26,6 +27,9 @@ public class CustomAuthorizeFilter extends OncePerRequestFilter {
 
     @Autowired
     private JwtConfig jwtConfig;
+
+    @Autowired
+    private AuthorizeFilterConfig authorizeFilterConfig;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -43,31 +47,15 @@ public class CustomAuthorizeFilter extends OncePerRequestFilter {
 
         List<String> endPointRequest = Arrays.asList(request.getRequestURI().split("/"));
 
+        //set of url is permit all and not check authorization
+        Set<String> permitAllSet = authorizeFilterConfig.getFilterList().stream()
+                .filter(endPointRequest::contains)
+                .collect(Collectors.toSet());
+
         if(endPointRequest.size() == 0){
             filterChain.doFilter(request, response);
         }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("token"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("oauth"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("login"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("oauth2"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("auth"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("webjars"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("api"))){
-            filterChain.doFilter(request, response);
-        }
-        else if(endPointRequest.stream().anyMatch(s -> s.equals("user"))){
+        else if(permitAllSet.size() > 0) {
             filterChain.doFilter(request, response);
         }
         else{
