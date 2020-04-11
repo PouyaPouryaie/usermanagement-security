@@ -120,40 +120,11 @@ public class AuthController {
 
 
         URI location = ServletUriComponentsBuilder
-                .fromCurrentContextPath().path("/user/me")
-                .buildAndExpand(result.getId()).toUri();
+                .fromCurrentContextPath().path("/api/user/{username}")
+                .buildAndExpand(result.getUserName()).toUri();
 
         return ResponseEntity.created(location)
                 .header(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix() + token)
-                .body(new ApiResponse(true, "User registered successfully@"));
+                .body(new ApiResponse(true, "User registered successfully"));
     }
-
-/*    @PostMapping("/signup")
-    public String login(@ModelAttribute("signup") ApplicationUser user){
-        user.setUserType("myApp");
-        user.setActive(true);
-        ApplicationUser userAfterSing = userService.createUser(user);
-        Set<UserPermission> userPermissionForRole = userPermissionService.getUserPermissionForRole(env.getProperty("application.basicRole.user"));
-        List<SimpleGrantedAuthority> simpleGrantedAuthorities = new ArrayList<>();
-        for(UserPermission userPermission: userPermissionForRole){
-            SimpleGrantedAuthority simpleGrantedAuthority = new SimpleGrantedAuthority(userPermission.getPermissionName());
-            simpleGrantedAuthorities.add(simpleGrantedAuthority);
-        }
-
-        Authentication authentication = new UsernamePasswordAuthenticationToken(
-                user.getUserName(),
-                null,
-                simpleGrantedAuthorities
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authentication);
-
-        Date date = new Date();
-        long t = date.getTime();
-        Date expirationTime = new Date(t + jwtConfig.getTokenExpirationAfterMilliSecond());
-        String token = jwtTokenUtil.generateTokenWithRole(simpleGrantedAuthorities, userAfterSing.getUserName(), expirationTime);
-        return UriComponentsBuilder.fromUriString("/home").build().toUriString();
-                *//*.queryParam("auth_token", token)
-                .build().toUriString();*//*
-    }*/
 }

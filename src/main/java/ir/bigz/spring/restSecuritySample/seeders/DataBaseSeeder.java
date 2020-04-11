@@ -75,12 +75,6 @@ public class DataBaseSeeder {
             Set<UserPermission> userPermissionForRole = adminRole.getUserPermissionsForRole();
             List<UserPermission> userPermissionFromUserPermissionTable = userPermissionDao.getAll();
 
-/*            Map<String, UserPermission> userPermissionFromDbMap = userPermissionForRole.stream()
-                    .collect(Collectors.toMap(
-                            UserPermission::getPermissionName,
-                            userPermission -> userPermission
-                    ));*/
-
             Map<String, UserPermission> userPermissionFromDbMap = new HashMap<>();
             for(UserPermission userPermission : userPermissionForRole){
                 userPermissionFromDbMap.put(userPermission.getPermissionName(), userPermission);
@@ -127,10 +121,6 @@ public class DataBaseSeeder {
         for(UserPermission userPermission : userPermissions){
             userPermissionMap.put(userPermission.getPermissionName(), userPermission);
         }
-
-/*        Map<String, UserPermission> userPermissionFromDbMap = userPermissions.stream().collect(
-                Collectors.toMap(UserPermission::getPermissionName, userPermission -> userPermission));*/
-
 
         listOfMethod.stream()
                 .filter(s -> userPermissionMap.get(s) == null)

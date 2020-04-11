@@ -2,10 +2,11 @@ package ir.bigz.spring.restSecuritySample.configuration;
 
 import ir.bigz.spring.restSecuritySample.jwt.*;
 import ir.bigz.spring.restSecuritySample.oauth.*;
-import ir.bigz.spring.restSecuritySample.security.SecurityUserService;
+import ir.bigz.spring.restSecuritySample.security.CustomUserDetailsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.BeanIds;
@@ -16,14 +17,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.crypto.SecretKey;
 
 @Configuration
 @EnableWebSecurity
-//@EnableGlobalMethodSecurity(prePostEnabled = true)
 @EnableGlobalMethodSecurity(
         securedEnabled = true,
         jsr250Enabled = true,
@@ -32,7 +31,7 @@ import javax.crypto.SecretKey;
 //@EnableOAuth2Sso
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
-    private final SecurityUserService securityUserService;
+    private final CustomUserDetailsService customUserDetailsService;
     private final PasswordEncoder passwordEncoder;
     private final SecretKey secretKey;
     private final JwtConfig jwtConfig;
@@ -53,12 +52,12 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     private CustomOAuth2UserService customOAuth2UserService;
 
     @Autowired
-    public WebSecurityConfig(SecurityUserService securityUserService,
+    public WebSecurityConfig(CustomUserDetailsService customUserDetailsService,
                              PasswordEncoder passwordEncoder,
                              SecretKey secretKey,
                              JwtConfig jwtConfig,
                              JwtTokenUtil jwtTokenUtil) {
-        this.securityUserService = securityUserService;
+        this.customUserDetailsService = customUserDetailsService;
         this.passwordEncoder = passwordEncoder;
         this.secretKey = secretKey;
         this.jwtConfig = jwtConfig;
@@ -96,7 +95,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     public DaoAuthenticationProvider daoAuthenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setPasswordEncoder(passwordEncoder);
-        provider.setUserDetailsService(securityUserService);
+        provider.setUserDetailsService(customUserDetailsService);
         return provider;
     }
 
@@ -136,6 +135,8 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/auth/**",
                         "/oauth2/**")
                 .permitAll()
+                .antMatchers(HttpMethod.GET, "/api/user/**")
+                .permitAll()
                 .anyRequest()
                 .authenticated()
                 .and()
@@ -156,57 +157,7 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 
         //custom filter
-        http.addFilterBefore(new JwtTokenVerifier(jwtConfig, jwtTokenUtil, securityUserService),
+        http.addFilterBefore(new JwtTokenVerifier(jwtConfig, jwtTokenUtil, customUserDetailsService),
                 UsernamePasswordAuthenticationFilter.class);
-
-/*        http.csrf().disable()
-                .sessionManagement()
-                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                .addFilter(new JwtUsernameAndPasswordAuthFilter(authenticationManager(), jwtConfig, jwtTokenUtil))
-                .addFilterAfter(new JwtTokenVerifier(jwtConfig, jwtTokenUtil), JwtUsernameAndPasswordAuthFilter.class)
-                .authorizeRequests()
-                .antMatchers("/", "index", "/css/*", "/js/*")
-                .permitAll()
-                .anyRequest()
-                .authenticated();*/
-
-
-/*
-        http.csrf().disable()
-                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-                .and()
-                //.addFilter(new JwtUsernameAndPasswordAuthFilter(authenticationManager(), jwtConfig, jwtTokenUtil))
-                .authorizeRequests()
-                .antMatchers("/login/**","/token/**","/","/css/*", "/js/*", "/error", "/webjars/**")
-                .permitAll()
-                .anyRequest().authenticated()
-                .and()
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
-                .logout(l -> l
-                        .logoutSuccessUrl("/").permitAll()
-                )
-                .oauth2Login().successHandler(customAuthenticationSuccessHandler).and()
-                .addFilterBefore(new JwtTokenVerifier(jwtConfig, jwtTokenUtil, securityUserService), UsernamePasswordAuthenticationFilter.class)
-*/
-
-
-/*        http
-                .authorizeRequests(a -> a
-                        .antMatchers("/", "/error", "/webjars/**").permitAll()
-                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(e -> e
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED))
-                )
-                .csrf(c -> c
-                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                )
-                .logout(l -> l
-                        .logoutSuccessUrl("/").permitAll()
-                )
-                .oauth2Login();*/
     }
 }

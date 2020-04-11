@@ -99,33 +99,4 @@ public class CustomOidcUserService extends OidcUserService {
         applicationUser.setAuthProvider(AuthProvider.google);
         userService.updateUser(applicationUser);
     }
-
-/*    @Override
-    public OidcUser loadUser(OidcUserRequest userRequest) throws OAuth2AuthenticationException {
-        OidcUser oidcUser = super.loadUser(userRequest);
-        Map<String, Object> attributes = oidcUser.getAttributes();
-        ApplicationUser userInfo = new ApplicationUser();
-        userInfo.setEmail((String) attributes.get("email"));
-        //userInfo.setId((String) attributes.get("sub"));
-        //userInfo.setImageUrl((String) attributes.get("picture"));
-        userInfo.setUserName((String) attributes.get("name"));
-        updateUser(userInfo);
-
-        return oidcUser;
-    }
-
-    private void updateUser(ApplicationUser userInfo) {
-        ApplicationUser applicationUser;
-
-        if(userService.getUserByEmail(userInfo.getEmail()).isEmpty()) {
-            applicationUser = new ApplicationUser();
-        }
-
-        applicationUser = userService.getUserByEmail(userInfo.getEmail()).get();
-        applicationUser.setEmail(userInfo.getEmail());
-        //user.setImageUrl(userInfo.getImageUrl());
-        applicationUser.setUserName(userInfo.getUserName());
-        applicationUser.setAuthProvider(AuthProvider.google);
-        userService.updateUser(applicationUser);
-    }*/
 }

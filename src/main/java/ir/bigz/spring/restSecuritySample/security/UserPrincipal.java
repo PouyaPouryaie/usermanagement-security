@@ -6,22 +6,31 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class UserPrincipal implements OAuth2User, UserDetails {
 
     private Long id;
-    private String email;
+    private String username;
     private String password;
     private Collection<? extends GrantedAuthority> authorities;
     private Map<String, Object> attributes;
 
-    public UserPrincipal(Long id, String email, String password, Collection<? extends GrantedAuthority> authorities) {
+    /*    private final Set<? extends GrantedAuthority> grantedAuthorities;
+    private final boolean accountNonExpired;
+    private final boolean accountNonLocked;
+    private final boolean credentialsNonExpired;
+    private final boolean enabled;*/
+
+    public UserPrincipal(Long id, String username, String password, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
-        this.email = email;
+        this.username = username;
+        this.password = password;
+        this.authorities = authorities;
+    }
+
+    public UserPrincipal(String username, String password, Collection<? extends GrantedAuthority> authorities) {
+        this.username = username;
         this.password = password;
         this.authorities = authorities;
     }
@@ -32,7 +41,7 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 
         return new UserPrincipal(
                 user.getId(),
-                user.getEmail(),
+                user.getUserName(),
                 user.getPassword(),
                 authorities
         );
@@ -48,10 +57,6 @@ public class UserPrincipal implements OAuth2User, UserDetails {
         return id;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
     @Override
     public String getPassword() {
         return password;
@@ -59,7 +64,7 @@ public class UserPrincipal implements OAuth2User, UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return username;
     }
 
     @Override

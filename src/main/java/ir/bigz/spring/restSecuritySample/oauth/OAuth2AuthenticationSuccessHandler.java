@@ -60,14 +60,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
 
 
-        //String targetUrl = determineTargetUrl(request,response,authentication);
-
         if (response.isCommitted()) {
             return;
         }
-
-/*        clearAuthenticationAttributes(request, response);
-        getRedirectStrategy().sendRedirect(request, response, targetUrl);*/
 
 
         //start
@@ -134,96 +129,6 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         clearAuthenticationAttributes(request, response);
         getRedirectStrategy().sendRedirect(request, response, redirectionUrl);
 
-        //end
-
-
-/*        DefaultOidcUser oidcUser = (DefaultOidcUser) authentication.getPrincipal();
-        Map attributes = oidcUser.getAttributes();
-        String email = (String) attributes.get("email");
-        ApplicationUser applicationUser = new ApplicationUser();
-
-        if(userService.getUserByEmail(email).isPresent()){
-            applicationUser = userService.getUserByEmail(email).get();
-            //some things
-        }
-        else{
-            applicationUser = new ApplicationUser();
-            applicationUser.setEmail(email);
-            applicationUser.setUserName(email);
-            applicationUser.setActive(true);
-            userService.createUser(applicationUser);
-            Set<UserRole> userRoleSet = new HashSet<>();
-            userRoleSet.add(roleService.getUserRole("USER").get());
-            applicationUser.setUserRoles(userRoleSet);
-            userService.updateUser(applicationUser);
-
-        }
-
-
-
-        UserRole userRole = roleService.getUserRole("USER").get();
-        Set<UserPermission> userPermissionsForRole = userRole.getUserPermissionsForRole();
-
-
-        Set<SimpleGrantedAuthority> simpleGrantedAuthorities = userPermissionsForRole.stream()
-                .map(m -> new SimpleGrantedAuthority(m.getPermissionName()))
-                .collect(Collectors.toSet());
-
-        Authentication myAuthenticationUser = new UsernamePasswordAuthenticationToken(
-                applicationUser.getUserName(),
-                null,
-                simpleGrantedAuthorities
-        );
-
-        //new
-        Date date = new Date();
-        long t = date.getTime();
-        Date expirationTime = new Date(t + jwtConfig.getTokenExpirationAfterMilliSecond());
-
-        String token = jwtTokenUtil.generateToken(myAuthenticationUser, myAuthenticationUser.getName(), expirationTime);
-
-        //response.addHeader(jwtConfig.getAuthorizationHeader(), jwtConfig.getTokenPrefix() + token);
-
-        String redirectionUrl = UriComponentsBuilder.fromUriString(env.getProperty("application.basicUrl.home"))
-                .queryParam("auth_token", token)
-                .build().toUriString();
-        getRedirectStrategy().sendRedirect(request, response, redirectionUrl);*/
-    }
-
-
-    protected String determineTargetUrl(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
-        Optional<String> redirectUri = CookieUtils.getCookie(request, REDIRECT_URI_PARAM_COOKIE_NAME)
-                .map(Cookie::getValue);
-
-        if(redirectUri.isPresent() && !isAuthorizedRedirectUri(redirectUri.get())) {
-            throw new BadRequestException("Sorry! We've got an Unauthorized Redirect URI and can't proceed with the authentication");
-        }
-
-/*        UserRole userRole = roleService.getUserRole("USER").get();
-        Set<UserPermission> userPermissionsForRole = userRole.getUserPermissionsForRole();
-
-
-        Set<SimpleGrantedAuthority> simpleGrantedAuthorities = userPermissionsForRole.stream()
-                .map(m -> new SimpleGrantedAuthority(m.getPermissionName()))
-                .collect(Collectors.toSet());
-
-        Authentication myAuthenticationUser = new UsernamePasswordAuthenticationToken(
-                authentication.getName(),
-                null,
-                simpleGrantedAuthorities
-        );*/
-
-        Date date = new Date();
-        long t = date.getTime();
-        Date expirationTime = new Date(t + jwtConfig.getTokenExpirationAfterMilliSecond());
-
-        String targetUrl = redirectUri.orElse(getDefaultTargetUrl());
-
-        String token = jwtTokenUtil.generateToken(authentication, authentication.getName(), expirationTime);
-
-        return UriComponentsBuilder.fromUriString(targetUrl)
-                .queryParam("token", token)
-                .build().toUriString();
     }
 
     protected void clearAuthenticationAttributes(HttpServletRequest request, HttpServletResponse response) {

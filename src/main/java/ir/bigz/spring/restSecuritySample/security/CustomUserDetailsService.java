@@ -22,14 +22,14 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
-public class SecurityUserService implements UserDetailsService {
+public class CustomUserDetailsService implements UserDetailsService {
 
     private final ApplicationUserDao applicationUserDao;
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
-    public SecurityUserService(@Qualifier("applicationUserDaoImpl") ApplicationUserDao applicationUserDao,
-                               PasswordEncoder passwordEncoder) {
+    public CustomUserDetailsService(@Qualifier("applicationUserDaoImpl") ApplicationUserDao applicationUserDao,
+                                    PasswordEncoder passwordEncoder) {
         this.applicationUserDao = applicationUserDao;
         this.passwordEncoder = passwordEncoder;
     }
@@ -45,16 +45,10 @@ public class SecurityUserService implements UserDetailsService {
     }
 
 
-    private Optional<SecurityUser> getUserByUsername(String username){
+    private Optional<UserPrincipal> getUserByUsername(String username){
 
         Optional<ApplicationUser> applicationUserFromDao = applicationUserDao
                 .selectApplicationUserByUserName(username);
-
-
-//        Set<UserPermission> s1 = applicationUserFromDao.get().getUserPermissionsForUser();
-//        for(UserPermission sss: s1){
-//            System.out.println(sss.getPermissionName());
-//        }
 
         Set<SimpleGrantedAuthority> simpleGrantedAuthorities = new HashSet<>();
         if(applicationUserFromDao.isPresent()){
@@ -89,15 +83,10 @@ public class SecurityUserService implements UserDetailsService {
 
         }
 
-        SecurityUser securityUser = new SecurityUser(simpleGrantedAuthorities,
-                applicationUserFromDao.get().getUserName(),
-                //passwordEncoder.encode(applicationUserFromDao.get().getPassword()),
+        UserPrincipal userPrincipal = new UserPrincipal(applicationUserFromDao.get().getUserName(),
                 applicationUserFromDao.get().getPassword(),
-                true,
-                true,
-                true,
-                true);
+                simpleGrantedAuthorities);
 
-        return Optional.ofNullable(securityUser);
+        return Optional.ofNullable(userPrincipal);
     }
 }

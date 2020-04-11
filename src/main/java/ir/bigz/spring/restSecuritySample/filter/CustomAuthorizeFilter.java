@@ -64,6 +64,12 @@ public class CustomAuthorizeFilter extends OncePerRequestFilter {
         else if(endPointRequest.stream().anyMatch(s -> s.equals("webjars"))){
             filterChain.doFilter(request, response);
         }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("api"))){
+            filterChain.doFilter(request, response);
+        }
+        else if(endPointRequest.stream().anyMatch(s -> s.equals("user"))){
+            filterChain.doFilter(request, response);
+        }
         else{
             Map<String, String> endPointRequestMap = new HashMap<>();
             for(String s: endPointRequest){

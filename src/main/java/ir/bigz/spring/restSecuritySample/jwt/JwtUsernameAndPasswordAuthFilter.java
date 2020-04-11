@@ -58,19 +58,9 @@ public class JwtUsernameAndPasswordAuthFilter extends UsernamePasswordAuthentica
                                             FilterChain chain,
                                             Authentication authResult) throws IOException, ServletException {
 
-        //new
         Date date = new Date();
         long t = date.getTime();
         Date expirationTime = new Date(t + jwtConfig.getTokenExpirationAfterMilliSecond());
-
-        //old token builder
-/*        String token = Jwts.builder()
-                .setSubject(authResult.getName())
-                .claim("authorities", authResult.getAuthorities())
-                .setIssuedAt(new Date())
-                .setExpiration(expirationTime)
-                .signWith(secretKey)
-                .compact();*/
 
         String token = jwtTokenUtil.generateToken(authResult, authResult.getName(), expirationTime);
 
