@@ -9,4 +9,8 @@ import java.util.Optional;
 public interface ApplicationUserDao extends DaoRepository<ApplicationUser,Long> {
 
     Optional<ApplicationUser> selectApplicationUserByUserName(String username);
+
+    Optional<ApplicationUser> selectApplicationUserByEmail(String email);
+
+
 }

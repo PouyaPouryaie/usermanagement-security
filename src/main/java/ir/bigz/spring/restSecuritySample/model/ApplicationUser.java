@@ -24,20 +24,22 @@ public class ApplicationUser {
     @Column(name = "username", nullable = false, unique = true)
     private String userName;
 
-    @Column(name = "password", nullable = false)
+    @Column(name = "email", nullable = false, unique = true)
+    private String email;
+
+    @Column(name = "authProvider")
+    @Enumerated(EnumType.STRING)
+    private AuthProvider authProvider;
+
+    @Column(nullable = false)
+    private Boolean emailVerified = false;
+
+    @Column(name = "password")
     private String password;
 
     @Column(name = "active", nullable = false)
     private boolean active;
 
-/*    @ManyToMany
-    @JoinTable(
-            name = "application_user_role",
-            joinColumns = @JoinColumn(
-                    name = "user_id", referencedColumnName = "user_id"),
-            inverseJoinColumns = @JoinColumn(
-                    name = "role_id", referencedColumnName = "role_id"))
-    private Collection<UserRole> roles;*/
 
     @ManyToMany(cascade = { CascadeType.ALL })
     @JoinTable(
@@ -60,9 +62,10 @@ public class ApplicationUser {
 
     }
 
-    public ApplicationUser(long id, String userName, String password, boolean active) {
+    public ApplicationUser(long id, String userName, String email, String password, boolean active) {
         this.id = id;
         this.userName = userName;
+        this.email = email;
         this.password = password;
         this.active = active;
     }
@@ -82,6 +85,30 @@ public class ApplicationUser {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public AuthProvider getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(AuthProvider authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public Boolean getEmailVerified() {
+        return emailVerified;
+    }
+
+    public void setEmailVerified(Boolean emailVerified) {
+        this.emailVerified = emailVerified;
     }
 
     public String getPassword() {
